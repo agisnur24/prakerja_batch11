@@ -10,10 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type ResponseAuth struct {
-	Token string
-}
-
 func RegisterController(c echo.Context) error {
 	var user user.User
 	c.Bind(&user)
