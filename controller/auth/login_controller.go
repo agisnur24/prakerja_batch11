@@ -4,38 +4,50 @@ import (
 	"net/http"
 	"prakerja_batch11/config"
 	"prakerja_batch11/middleware"
-	"prakerja_batch11/model/user"
+	"prakerja_batch11/model/base"
+	usermodel "prakerja_batch11/model/user"
 
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterController(c echo.Context) error {
-	var user user.User
-	c.Bind(&user)
+func LogInController(e echo.Context) error {
+	var logIn usermodel.LoginRequest
+	e.Bind(logIn)
 
-	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
-	user.Password = string(hashPassword)
+	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(logIn.Password), 12)
+	logIn.Password = string(hashPassword)
 
-	result := config.DB.Create(&user)
-	if result.Error != nil {
-		return c.JSON(http.StatusInternalServerError, base.BaseResponse{
+	var user usermodel.User
+	email := e.QueryParam(logIn.Email)
+	if findEmail := config.DB.Where("email = ?", email).First(&user).Error; findEmail != nil {
+		if gorm.IsRecordNotFoundError(findEmail) {
+			return e.JSON(http.StatusNotFound, base.Response{
+				Status:  false,
+				Message: "Email not found",
+				Data:    nil,
+			})
+		}
+	}
+
+	password := bcrypt.CompareHashAndPassword([]byte(logIn.Password), []byte(user.Password))
+
+	if logIn.Email != user.Email || password != nil {
+		return e.JSON(http.StatusUnauthorized, base.Response{
 			Status:  false,
-			Message: "Failed add data to database",
+			Message: "Email or password is incorrect",
 			Data:    nil,
 		})
 	}
 
-	var authResponse = usermodel.ResponseAuth{
-		Id:    user.Id,
-		Name:  user.Name,
-		Email: user.Email,
+	var loginResponse = usermodel.LoginResponse{
 		Token: middleware.GenerateTokenJWT(user.Id, user.Name),
 	}
 
-	return c.JSON(http.StatusOK, base.BaseResponse{
+	return e.JSON(http.StatusOK, base.Response{
 		Status:  true,
-		Message: "Success register",
-		Data:    authResponse,
+		Message: "Loged In",
+		Data:    loginResponse,
 	})
 }

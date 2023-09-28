@@ -10,27 +10,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type ResponseAuth struct {
-	Token string
-}
-
-func RegisterController(c echo.Context) error {
+func RegisterController(e echo.Context) error {
 	var user user.User
-	c.Bind(&user)
+	e.Bind(&user)
 
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	user.Password = string(hashPassword)
 
 	result := config.DB.Create(&user)
 	if result.Error != nil {
-		return c.JSON(http.StatusInternalServerError, base.BaseResponse{
+		return e.JSON(http.StatusInternalServerError, base.Response{
 			Status:  false,
 			Message: "Failed add data to database",
 			Data:    nil,
 		})
 	}
 
-	return c.JSON(http.StatusOK, base.BaseResponse{
+	return e.JSON(http.StatusOK, base.Response{
 		Status:  true,
 		Message: "Success register",
 		Data:    nil,
