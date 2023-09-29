@@ -3,8 +3,9 @@ package auth
 import (
 	"net/http"
 	"prakerja_batch11/config"
-	"prakerja_batch11/middleware"
-	"prakerja_batch11/model/base"
+	midware "prakerja_batch11/middleware"
+	basemodel "prakerja_batch11/model/base"
+	"prakerja_batch11/model/login"
 	usermodel "prakerja_batch11/model/user"
 
 	"github.com/jinzhu/gorm"
@@ -13,7 +14,7 @@ import (
 )
 
 func LogInController(e echo.Context) error {
-	var logIn usermodel.LoginRequest
+	var logIn login.LoginRequest
 	e.Bind(logIn)
 
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(logIn.Password), 12)
@@ -23,7 +24,7 @@ func LogInController(e echo.Context) error {
 	email := e.QueryParam(logIn.Email)
 	if findEmail := config.DB.Where("email = ?", email).First(&user).Error; findEmail != nil {
 		if gorm.IsRecordNotFoundError(findEmail) {
-			return e.JSON(http.StatusNotFound, base.Response{
+			return e.JSON(http.StatusNotFound, basemodel.Response{
 				Status:  false,
 				Message: "Email not found",
 				Data:    nil,
@@ -33,21 +34,33 @@ func LogInController(e echo.Context) error {
 
 	password := bcrypt.CompareHashAndPassword([]byte(logIn.Password), []byte(user.Password))
 
-	if logIn.Email != user.Email || password != nil {
-		return e.JSON(http.StatusUnauthorized, base.Response{
+	if logIn.Email == user.Email && password != nil {
+		return e.JSON(http.StatusUnauthorized, basemodel.Response{
 			Status:  false,
-			Message: "Email or password is incorrect",
+			Message: "Password is incorrect",
 			Data:    nil,
 		})
 	}
 
-	var loginResponse = usermodel.LoginResponse{
-		Token: middleware.GenerateTokenJWT(user.Id, user.Name),
+	if logIn.Email != user.Email && password == nil {
+		return e.JSON(http.StatusUnauthorized, basemodel.Response{
+			Status:  false,
+			Message: "Email is incorrect",
+			Data:    nil,
+		})
 	}
 
-	return e.JSON(http.StatusOK, base.Response{
+	var loginResponse = &login.LoginResponse{}
+
+	if logIn.Email == user.Email && password != nil {
+		genTOken := midware.GenerateTokenJWT(user.Id, user.Name)
+		loginResponse.Token = genTOken
+		return nil
+	}
+
+	return e.JSON(http.StatusOK, basemodel.Response{
 		Status:  true,
-		Message: "Loged In",
+		Message: "Loged in",
 		Data:    loginResponse,
 	})
 }
