@@ -8,55 +8,39 @@ import (
 	"prakerja_batch11/model/login"
 	usermodel "prakerja_batch11/model/user"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func LogInController(e echo.Context) error {
 	var logIn login.LoginRequest
-	e.Bind(logIn)
+	e.Bind(&logIn)
 
-	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(logIn.Password), 12)
-	logIn.Password = string(hashPassword)
+	//hashPassword, _ := bcrypt.GenerateFromPassword([]byte(logIn.Password), 12)
+	//logIn.Password = string(hashPassword)
 
 	var user usermodel.User
-	email := e.QueryParam(logIn.Email)
-	if findEmail := config.DB.Where("email = ?", email).First(&user).Error; findEmail != nil {
-		if gorm.IsRecordNotFoundError(findEmail) {
-			return e.JSON(http.StatusNotFound, basemodel.Response{
-				Status:  false,
-				Message: "Email not found",
-				Data:    nil,
-			})
-		}
-	}
-
-	password := bcrypt.CompareHashAndPassword([]byte(logIn.Password), []byte(user.Password))
-
-	if logIn.Email == user.Email && password != nil {
-		return e.JSON(http.StatusUnauthorized, basemodel.Response{
+	if findEmail := config.DB.Where("email = ?", logIn.Email).First(&user).Error; findEmail != nil {
+		return e.JSON(http.StatusNotFound, basemodel.Response{
 			Status:  false,
-			Message: "Password is incorrect",
+			Message: "Email not found",
 			Data:    nil,
 		})
 	}
 
-	if logIn.Email != user.Email && password == nil {
+	var loginResponse = login.LoginResponse{}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(logIn.Password))
+	if err != nil {
 		return e.JSON(http.StatusUnauthorized, basemodel.Response{
 			Status:  false,
-			Message: "Email is incorrect",
+			Message: "Incorrect password",
 			Data:    nil,
 		})
 	}
 
-	var loginResponse = &login.LoginResponse{}
-
-	if logIn.Email == user.Email && password != nil {
-		genTOken := midware.GenerateTokenJWT(user.Id, user.Name)
-		loginResponse.Token = genTOken
-		return nil
-	}
+	genToken := midware.GenerateTokenJWT(user.Id, user.Name)
+	loginResponse.Token = genToken
 
 	return e.JSON(http.StatusOK, basemodel.Response{
 		Status:  true,
