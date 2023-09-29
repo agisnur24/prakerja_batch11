@@ -14,6 +14,14 @@ func RegisterController(e echo.Context) error {
 	var user usermodel.User
 	e.Bind(&user)
 
+	if err := config.DB.Where("email = ?", user.Email).First(&user).Error; err == nil {
+		return e.JSON(http.StatusBadRequest, basemodel.Response{
+			Status:  false,
+			Message: "Email already exist",
+			Data:    nil,
+		})
+	}
+
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	user.Password = string(hashPassword)
 

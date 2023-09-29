@@ -16,9 +16,6 @@ func LogInController(e echo.Context) error {
 	var logIn login.LoginRequest
 	e.Bind(&logIn)
 
-	//hashPassword, _ := bcrypt.GenerateFromPassword([]byte(logIn.Password), 12)
-	//logIn.Password = string(hashPassword)
-
 	var user usermodel.User
 	if findEmail := config.DB.Where("email = ?", logIn.Email).First(&user).Error; findEmail != nil {
 		return e.JSON(http.StatusNotFound, basemodel.Response{

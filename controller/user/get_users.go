@@ -11,9 +11,8 @@ import (
 
 func GetUsers(c echo.Context) error {
 	var users []usermodel.User
-	var userResponse []usermodel.UserResponse
 
-	result := config.DB.Find(&users, userResponse)
+	result := config.DB.Find(&users)
 	if result.Error != nil {
 		return c.JSON(http.StatusInternalServerError, basemodel.Response{
 			Status:  false,
@@ -22,9 +21,10 @@ func GetUsers(c echo.Context) error {
 		})
 	}
 
+	userResponses := usermodel.ToUserResponses(users)
 	return c.JSON(http.StatusOK, basemodel.Response{
 		Status:  true,
 		Message: "Success",
-		Data:    userResponse,
+		Data:    userResponses,
 	})
 }
