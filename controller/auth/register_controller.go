@@ -34,7 +34,7 @@ func RegisterController(e echo.Context) error {
 		})
 	}
 
-	return e.JSON(http.StatusOK, basemodel.Response{
+	return e.JSON(http.StatusCreated, basemodel.Response{
 		Status:  true,
 		Message: "Registration successful",
 		Data:    nil,

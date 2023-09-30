@@ -1,18 +1,18 @@
-package userctrl
+package articlectrl
 
 import (
 	"net/http"
 	"prakerja_batch11/config"
+	"prakerja_batch11/model/article"
 	basemodel "prakerja_batch11/model/base"
-	usermodel "prakerja_batch11/model/user"
 
 	"github.com/labstack/echo/v4"
 )
 
-func GetUsers(e echo.Context) error {
-	var users []usermodel.User
+func GetArticles(e echo.Context) error {
+	var articles []article.Article
 
-	result := config.DB.Find(&users)
+	result := config.DB.Find(&articles)
 	if result.Error != nil {
 		return e.JSON(http.StatusInternalServerError, basemodel.Response{
 			Status:  false,
@@ -21,10 +21,9 @@ func GetUsers(e echo.Context) error {
 		})
 	}
 
-	userResponses := usermodel.ToUserResponses(users)
 	return e.JSON(http.StatusOK, basemodel.Response{
 		Status:  true,
 		Message: "Success",
-		Data:    userResponses,
+		Data:    articles,
 	})
 }
