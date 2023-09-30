@@ -3,32 +3,40 @@ package auth
 import (
 	"net/http"
 	"prakerja_batch11/config"
-	"prakerja_batch11/model/base"
-	"prakerja_batch11/model/user"
+	basemodel "prakerja_batch11/model/base"
+	usermodel "prakerja_batch11/model/user"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterController(c echo.Context) error {
-	var user user.User
-	c.Bind(&user)
+func RegisterController(e echo.Context) error {
+	var user usermodel.User
+	e.Bind(&user)
+
+	if err := config.DB.Where("email = ?", user.Email).First(&user).Error; err == nil {
+		return e.JSON(http.StatusBadRequest, basemodel.Response{
+			Status:  false,
+			Message: "Email already exist",
+			Data:    nil,
+		})
+	}
 
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	user.Password = string(hashPassword)
 
 	result := config.DB.Create(&user)
 	if result.Error != nil {
-		return c.JSON(http.StatusInternalServerError, base.BaseResponse{
+		return e.JSON(http.StatusInternalServerError, basemodel.Response{
 			Status:  false,
-			Message: "Failed add data to database",
+			Message: "Registration failed",
 			Data:    nil,
 		})
 	}
 
-	return c.JSON(http.StatusOK, base.BaseResponse{
+	return e.JSON(http.StatusCreated, basemodel.Response{
 		Status:  true,
-		Message: "Success register",
+		Message: "Registration successful",
 		Data:    nil,
 	})
 }

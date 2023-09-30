@@ -8,12 +8,12 @@ import (
 )
 
 type jwtCustomClaims struct {
-	UserId int    `json:"user_id"`
-	Name   string `json:"name"`
+	UserId uint
+	Name   string
 	jwt.RegisteredClaims
 }
 
-func GenerateTokenJWT(userId int, name string) string {
+func GenerateTokenJWT(userId uint, name string) string {
 	var claims = jwtCustomClaims{
 		userId,
 		name,

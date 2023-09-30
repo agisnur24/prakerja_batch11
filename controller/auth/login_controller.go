@@ -3,39 +3,45 @@ package auth
 import (
 	"net/http"
 	"prakerja_batch11/config"
-	"prakerja_batch11/middleware"
-	"prakerja_batch11/model/user"
+	midware "prakerja_batch11/middleware"
+	basemodel "prakerja_batch11/model/base"
+	"prakerja_batch11/model/login"
+	usermodel "prakerja_batch11/model/user"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterController(c echo.Context) error {
-	var user user.User
-	c.Bind(&user)
+func LogInController(e echo.Context) error {
+	var logIn login.LoginRequest
+	e.Bind(&logIn)
 
-	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
-	user.Password = string(hashPassword)
-
-	result := config.DB.Create(&user)
-	if result.Error != nil {
-		return c.JSON(http.StatusInternalServerError, base.BaseResponse{
+	var user usermodel.User
+	if findEmail := config.DB.Where("email = ?", logIn.Email).First(&user).Error; findEmail != nil {
+		return e.JSON(http.StatusNotFound, basemodel.Response{
 			Status:  false,
-			Message: "Failed add data to database",
+			Message: "Email not found",
 			Data:    nil,
 		})
 	}
 
-	var authResponse = usermodel.ResponseAuth{
-		Id:    user.Id,
-		Name:  user.Name,
-		Email: user.Email,
-		Token: middleware.GenerateTokenJWT(user.Id, user.Name),
+	var loginResponse = login.LoginResponse{}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(logIn.Password))
+	if err != nil {
+		return e.JSON(http.StatusUnauthorized, basemodel.Response{
+			Status:  false,
+			Message: "Incorrect password",
+			Data:    nil,
+		})
 	}
 
-	return c.JSON(http.StatusOK, base.BaseResponse{
+	genToken := midware.GenerateTokenJWT(user.Id, user.Name)
+	loginResponse.Token = genToken
+
+	return e.JSON(http.StatusOK, basemodel.Response{
 		Status:  true,
-		Message: "Success register",
-		Data:    authResponse,
+		Message: "Loged in",
+		Data:    loginResponse,
 	})
 }

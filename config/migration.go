@@ -1,7 +1,10 @@
 package config
 
-import "os/user"
+import (
+	"prakerja_batch11/model/article"
+	usermodel "prakerja_batch11/model/user"
+)
 
 func initMigrate() {
-	DB.AutoMigrate(&user.User{})
+	DB.AutoMigrate(&usermodel.User{}, &article.Article{})
 }
