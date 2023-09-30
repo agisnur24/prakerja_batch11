@@ -19,4 +19,7 @@ func InitRoutes(e *echo.Echo) {
 	eAuthUser := e.Group("")
 	eAuthUser.Use(echojwt.JWT([]byte(os.Getenv("SECRET_JWT"))))
 	eAuthUser.GET("/users", userctrl.GetUsers)
+	eAuthUser.GET("/find_user", userctrl.FindUser)
+	eAuthUser.PUT("/update_user/:id", userctrl.UpdateUser)
+	eAuthUser.PUT("/delete_user/:id", userctrl.DeleteUser)
 }

@@ -17,7 +17,18 @@ type UserResponse struct {
 	Contact string `json:"contact"`
 }
 
-func ToUserResponse(user User) UserResponse {
+type FindUserRequest struct {
+	Name string `json:"name"`
+}
+
+type UpdateUser struct {
+	Id      uint   `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Contact string `json:"contact"`
+}
+
+func ToUserResponse(user *User) UserResponse {
 	return UserResponse{
 		Id:      user.Id,
 		Name:    user.Name,
@@ -30,7 +41,16 @@ func ToUserResponse(user User) UserResponse {
 func ToUserResponses(users []User) []UserResponse {
 	var userResponses []UserResponse
 	for _, user := range users {
-		userResponses = append(userResponses, ToUserResponse(user))
+		userResponses = append(userResponses, ToUserResponse(&user))
 	}
 	return userResponses
+}
+
+func ToUser(user UpdateUser) *User {
+	return &User{
+		Id:      user.Id,
+		Name:    user.Name,
+		Address: user.Address,
+		Contact: user.Contact,
+	}
 }
